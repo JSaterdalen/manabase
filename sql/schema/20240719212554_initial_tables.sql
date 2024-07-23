@@ -21,6 +21,7 @@ CREATE TABLE game (
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp,
     date_played DATE NOT NULL,
+    game_number INT NOT NULL,
     is_totem bool NOT NULL DEFAULT FALSE
 );
 
@@ -36,8 +37,11 @@ CREATE TABLE player_deck_game (
 );
 
 -- +goose StatementEnd
-
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE deck, player, game, player_deck_game;
+DROP TABLE deck,
+player,
+game,
+player_deck_game;
+
 -- +goose StatementEnd

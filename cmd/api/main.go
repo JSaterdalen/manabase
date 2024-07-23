@@ -1,14 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/jsaterdalen/manabase/cmd/web"
+	"github.com/jsaterdalen/manabase/internal/database"
 
-	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -26,31 +27,21 @@ func main() {
 		fmt.Println("DB_URL is not found in the environment")
 	}
 
-	// conn, err := sql.Open("postgres", dbUrl)
-	// if err != nil {
-	// 	log.Fatal("Can't connect to database", err)
-	// }
+	conn, err := sql.Open("postgres", dbUrl)
+	if err != nil {
+		log.Fatal("Can't connect to database", err)
+	}
 
-	// queries := database.New(conn)
+	queries := database.New(conn)
+	indexHandler := web.Handler{Queries: queries}
 
 	router := chi.NewRouter()
 
 	fs := http.FileServer(http.Dir("cmd/web/static"))
 	router.Handle("/static/*", http.StripPrefix("/static/", fs))
 
-	router.Get("/", templ.Handler(web.HomePage()).ServeHTTP)
-	// router.Get("/games", func(w http.ResponseWriter, r *http.Request) {
-	// 	players := []manabase.Player{
-	// 		{UUID: "1", Name: "John"},
-	// 		{UUID: "2", Name: "Jane"},
-	// 	}
-	// 	games := []manabase.Game{
-	// 		{UUID: "1", Players: players, DatePlayed: "2021-01-01", GameNumber: 1},
-	// 	}
-
-	// 	component := web.GameList(games)
-	// 	component.Render(r.Context(), w)
-	// })
+	// router.Get("/", templ.Handler(web.HomePage()).ServeHTTP)
+	router.Get("/", indexHandler.ServeHTTP)
 
 	srv := &http.Server{
 		Handler: router,
@@ -58,7 +49,7 @@ func main() {
 	}
 
 	log.Printf("Server listening on port %s", portString)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}
