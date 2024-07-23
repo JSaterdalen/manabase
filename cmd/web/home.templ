@@ -1,0 +1,101 @@
+package web
+
+import (
+    "fmt"
+)
+
+type Game struct {
+    GameNumber int
+    DatePlayed string
+    Players []Player
+    Winner Player
+}
+
+type Player struct {
+    Name string
+    Deck string
+    IsWon bool
+}
+
+var games = []Game{
+    {
+        GameNumber: 34,
+        DatePlayed: "2024-07-21",
+        Winner: Player{Name: "Josh", Deck: "Riders of Rohan", IsWon: true},
+        Players: []Player{
+            {Name: "Josh", Deck: "Riders of Rohan", IsWon: true},
+            {Name: "Stefan", Deck: "Angel", IsWon: false},
+            {Name: "Steve", Deck: "Everything", IsWon: false},
+        },
+    },
+    {
+        GameNumber: 33,
+        DatePlayed: "2024-07-21",
+        Winner: Player{Name: "Stefan", Deck: "Timey-Wimey", IsWon: true},
+        Players: []Player{
+            {Name: "Josh", Deck: "Party Time", IsWon: false},
+            {Name: "Stefan", Deck: "Timey-Wimey", IsWon: true},
+            {Name: "Steve", Deck: "Pirate", IsWon: false},
+        },
+    },
+    {
+        GameNumber: 32,
+        DatePlayed: "2024-07-14",
+        Winner: Player{Name: "Steve", Deck: "Zombie", IsWon: true},
+        Players: []Player{
+            {Name: "Josh", Deck: "Party Time", IsWon: false},
+            {Name: "Stefan", Deck: "Masters of Evil", IsWon: false},
+            {Name: "Steve", Deck: "Zombie", IsWon: true},
+        },
+    },
+    {
+        GameNumber: 31,
+        DatePlayed: "2024-07-14",
+        Winner: Player{Name: "Josh", Deck: "Myr", IsWon: true},
+        Players: []Player{
+            {Name: "Josh", Deck: "Myr", IsWon: true},
+            {Name: "Stefan", Deck: "First of the Angels (Human)", IsWon: false},
+            {Name: "Steve", Deck: "Zombie", IsWon: false},
+        },
+    },
+}
+
+templ HomePage() {
+	@Base() {
+        <div class="mx-auto max-w-3xl">
+            <ul class="space-y-4 mt-4">
+                for _, game := range games {
+                    <li class="overflow-hidden rounded-lg bg-white shadow">
+                        <div class="px-4 py-5 sm:p-6 grid grid-cols-2 gap-4 text-base">
+                            <div class="text-right">
+                                <div>Game { fmt.Sprintf("%d", game.GameNumber) }</div>
+                                <div class="font-bold">{ game.DatePlayed }</div>
+                            </div>
+                            <div class="order-first">
+                                <div class="text-zinc-500">Winner</div>
+                                <div class="text-xl font-bold">{game.Winner.Name}</div>
+                                <div>{game.Winner.Deck}</div>
+                            </div>
+                            <div class="col-span-2 flex gap-x-4">
+                                <div>
+                                    for _, player := range game.Players {
+                                        if !player.IsWon {
+                                            <div class="text-zinc-500 mb-1">{player.Name}</div>
+                                        }
+                                    }
+                                </div>
+                                <div>
+                                    for _, player := range game.Players {
+                                        if !player.IsWon {
+                                            <div class="mb-1">{player.Deck}</div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </div>
+	}
+}

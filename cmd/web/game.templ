@@ -1,0 +1,20 @@
+package web
+
+import (
+    "github.com/jsaterdalen/manabase"
+    "fmt"
+)
+
+templ GameList(games []manabase.Game) {
+	<div>
+		for _, game := range games {
+            <div>
+                <h2>Game { fmt.Sprintf("%d", game.GameNumber) } - { game.DatePlayed }</h2>
+                <h3>Players</h3>
+                <ul>
+                    <li>Hello</li>
+                </ul>
+            </div>
+		}
+    </div>
+}
