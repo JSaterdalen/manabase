@@ -2,11 +2,10 @@ build:
 	@echo "Building..."
 	@make templ
 	@make tailwind
-	@go build -o main ./cmd/api
+	@go build -o manabase ./cmd/api
 
 run:
-	@go run ./cmd/api
-
+	./manabase
 watch:
 	air; \
 	echo "Watching...";
