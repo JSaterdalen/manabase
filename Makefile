@@ -2,7 +2,7 @@ build:
 	@echo "Building..."
 	@make templ
 	@make tailwind
-	@go build -o manabase ./cmd/api
+	@go build -o bin/manabase ./cmd/manabase
 
 run:
 	./manabase
@@ -11,10 +11,10 @@ watch:
 	echo "Watching...";
 
 tailwind:
-	./tailwindcss -i cmd/web/static/css/input.css -o cmd/web/static/css/output.css
+	./tailwindcss -i web/static/css/input.css -o cmd/web/static/css/output.css
 
 tailwind-watch:
-	./tailwindcss -i cmd/web/static/css/input.css -o cmd/web/static/css/output.css --watch
+	./tailwindcss -i web/static/css/input.css -o cmd/web/static/css/output.css --watch
 
 templ:
 	templ generate

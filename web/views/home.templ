@@ -1,4 +1,4 @@
-package web
+package views
 
 import (
 	"fmt"
@@ -6,6 +6,10 @@ import (
 	"net/http"
 	"sort"
 )
+
+func NewHomeHandler(db *database.Queries) Handler {
+	return Handler{Queries: db}
+}
 
 type Handler struct {
 	Queries *database.Queries

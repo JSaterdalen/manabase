@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jsaterdalen/manabase/cmd/web"
 	"github.com/jsaterdalen/manabase/internal/database"
+	"github.com/jsaterdalen/manabase/web/views"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
@@ -33,15 +33,14 @@ func main() {
 	}
 
 	queries := database.New(conn)
-	indexHandler := web.Handler{Queries: queries}
+	// indexHandler := views.Handler{Queries: queries}
 
 	router := chi.NewRouter()
 
-	fs := http.FileServer(http.Dir("cmd/web/static"))
+	fs := http.FileServer(http.Dir("web/static"))
 	router.Handle("/static/*", http.StripPrefix("/static/", fs))
 
-	// router.Get("/", templ.Handler(web.HomePage()).ServeHTTP)
-	router.Get("/", indexHandler.ServeHTTP)
+	router.Get("/", views.NewHomeHandler(queries))
 
 	srv := &http.Server{
 		Handler: router,
