@@ -7,11 +7,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jsaterdalen/manabase/internal/database"
-	"github.com/jsaterdalen/manabase/web/views"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
+	"github.com/jsaterdalen/manabase/internal/database"
 	_ "github.com/lib/pq"
 )
 
@@ -40,7 +38,8 @@ func main() {
 	fs := http.FileServer(http.Dir("web/static"))
 	router.Handle("/static/*", http.StripPrefix("/static/", fs))
 
-	router.Get("/", views.NewHomeHandler(queries))
+	// router.Get("/", )
+	router.Get("/", testHandler())
 
 	srv := &http.Server{
 		Handler: router,
@@ -52,4 +51,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func testHandler(db *sql.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var name string
+		// Execute the query.
+		row := db.QueryRow("SELECT myname FROM mytable")
+		if err := row.Scan(&name); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		// Write it back to the client.
+		fmt.Fprintf(w, "hi %s!\n", name)
+	})
 }

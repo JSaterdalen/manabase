@@ -11,3 +11,8 @@ type Player struct {
 	UUID string
 	Name string
 }
+
+type Deck struct {
+	Name    string
+	OwnerId string
+}
