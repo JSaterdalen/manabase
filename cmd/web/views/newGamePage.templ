@@ -1,0 +1,12 @@
+package views
+
+import (
+	"github.com/jsaterdalen/manabase/cmd/web/views/components"
+	"github.com/jsaterdalen/manabase/cmd/web/views/layouts"
+)
+
+templ NewGamePage() {
+	@layouts.Base() {
+		@components.NewGameForm()
+	}
+}

@@ -11,10 +11,10 @@ watch:
 	echo "Watching...";
 
 tailwind:
-	./tailwindcss -i web/static/css/input.css -o cmd/web/static/css/output.css
+	./tailwindcss -i cmd/web/static/css/input.css -o cmd/web/static/css/output.css
 
 tailwind-watch:
-	./tailwindcss -i web/static/css/input.css -o cmd/web/static/css/output.css --watch
+	./tailwindcss -i cmd/web/static/css/input.css -o cmd/web/static/css/output.css --watch
 
 templ:
 	templ generate

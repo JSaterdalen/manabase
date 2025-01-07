@@ -1,6 +1,8 @@
--- name: GetPlayerGameList :many
+-- name: GetPlayerDeckGame :many
 SELECT
+    player.id AS player_id,
     player."name" AS player_name,
+    deck.id AS deck_id,
     deck."name" AS deck_name,
     pdg.is_won,
     game.id AS game_id,

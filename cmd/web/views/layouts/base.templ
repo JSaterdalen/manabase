@@ -1,4 +1,4 @@
-package views
+package layouts
 
 templ Base() {
 	<!DOCTYPE html>
@@ -7,11 +7,11 @@ templ Base() {
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>manabase</title>
-			<link href="static/css/output.css" rel="stylesheet"/>
+			<link href="static/css/output.css" type="text/css" rel="stylesheet"/>
 			<script src="https://unpkg.com/htmx.org@2.0.1" integrity="sha384-QWGpdj554B4ETpJJC9z+ZHJcA/i59TyjxEPXiiUgN2WmTyV5OEZWCD6gQhgkdpB/" crossorigin="anonymous"></script>
 		</head>
-		<body class="bg-gray-700">
-			<main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+		<body>
+			<main class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 mt-4">
 				{ children... }
 			</main>
 		</body>

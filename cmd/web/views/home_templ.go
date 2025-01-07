@@ -10,100 +10,11 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/jsaterdalen/manabase/internal/database"
-	"net/http"
-	"sort"
+	"github.com/jsaterdalen/manabase"
+	"github.com/jsaterdalen/manabase/cmd/web/views/layouts"
 )
 
-func NewHomeHandler(db *database.Queries) Handler {
-	return Handler{Queries: db}
-}
-
-type Handler struct {
-	Queries *database.Queries
-}
-
-func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	games, err := h.Queries.GetPlayerGameList(r.Context())
-	if err != nil {
-		//TODO: Log error server side.
-	}
-	m := NewGameListViewModel(games, err)
-	HomePage(m).Render(r.Context(), w)
-}
-
-func NewGameListViewModel(games []database.GetPlayerGameListRow, err error) (m GameListViewModel) {
-	gameMap := make(map[string]GameWithPlayers)
-	for _, game := range games {
-		gameId := game.GameID.String()
-
-		if _, ok := gameMap[gameId]; !ok {
-			gameMap[gameId] = GameWithPlayers{
-				Game: Game{
-					GameNumber: int(game.GameNumber),
-					DatePlayed: game.DatePlayed.Format("2006-01-02"),
-					GameId:     gameId,
-				},
-				Players: []Player{},
-			}
-		}
-
-		player := Player{
-			Name:  game.PlayerName,
-			Deck:  game.DeckName,
-			IsWon: game.IsWon,
-		}
-
-		game := gameMap[gameId]
-		game.Players = append(game.Players, player)
-		sort.Slice(game.Players, func(i, j int) bool {
-			return game.Players[i].Name < game.Players[j].Name
-		})
-
-		if player.IsWon {
-			game.Winner = player
-		}
-		gameMap[gameId] = game
-	}
-	for _, game := range gameMap {
-		m.GameList = append(m.GameList, game)
-	}
-
-	// sort m.GameList
-	sort.Slice(m.GameList, func(i, j int) bool {
-		return m.GameList[i].Game.GameNumber > m.GameList[j].Game.GameNumber
-	})
-
-	if err != nil {
-		m.ErrorMessage = "Failed to load invites, please try again"
-	}
-	return m
-}
-
-type GameListViewModel struct {
-	GameList     []GameWithPlayers
-	ErrorMessage string
-}
-
-type Game struct {
-	GameNumber int
-	DatePlayed string
-	GameId     string
-}
-
-type Player struct {
-	Name  string
-	Deck  string
-	IsWon bool
-}
-
-type GameWithPlayers struct {
-	Game
-	Players []Player
-	Winner  Player
-}
-
-func HomePage(m GameListViewModel) templ.Component {
+func HomePage(games []manabase.Game) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -133,11 +44,11 @@ func HomePage(m GameListViewModel) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"mx-auto max-w-3xl\"><ul class=\"space-y-4 mt-4\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<a href=\"/newgame\"><button type=\"button\" class=\"inline-flex items-center gap-x-2 rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600\"><svg class=\"-ml-0.5 h-5 w-5\" viewBox=\"0 0 20 20\" fill=\"currentColor\" aria-hidden=\"true\"><path fill-rule=\"evenodd\" d=\"M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z\" clip-rule=\"evenodd\"></path></svg> new game</button></a><ul class=\"space-y-4 mt-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			for _, game := range m.GameList {
+			for _, game := range games {
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li class=\"overflow-hidden rounded-lg bg-white shadow\"><div class=\"px-4 py-5 sm:p-6 grid grid-cols-2 gap-4 text-base\"><div class=\"text-right\"><div>Game ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -145,7 +56,7 @@ func HomePage(m GameListViewModel) templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", game.GameNumber))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/home.templ`, Line: 106, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/views/home.templ`, Line: 24, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -156,9 +67,9 @@ func HomePage(m GameListViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(game.DatePlayed)
+				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(game.DatePlayed.Local().Format("2006-01-01"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/home.templ`, Line: 107, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/views/home.templ`, Line: 25, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -171,7 +82,7 @@ func HomePage(m GameListViewModel) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(game.Winner.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/home.templ`, Line: 111, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/views/home.templ`, Line: 29, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -182,9 +93,9 @@ func HomePage(m GameListViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(game.Winner.Deck)
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(game.Winner.Deck.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/home.templ`, Line: 112, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/views/home.templ`, Line: 30, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -195,7 +106,7 @@ func HomePage(m GameListViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				for _, player := range game.Players {
-					if !player.IsWon {
+					if !player.IsWinner(game) {
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"text-zinc-500 mb-1\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
@@ -203,7 +114,7 @@ func HomePage(m GameListViewModel) templ.Component {
 						var templ_7745c5c3_Var7 string
 						templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(player.Name)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/home.templ`, Line: 118, Col: 56}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/views/home.templ`, Line: 36, Col: 55}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 						if templ_7745c5c3_Err != nil {
@@ -220,15 +131,15 @@ func HomePage(m GameListViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				for _, player := range game.Players {
-					if !player.IsWon {
+					if !player.IsWinner(game) {
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"mb-1\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var8 string
-						templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(player.Deck)
+						templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(player.Deck.Name)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/home.templ`, Line: 125, Col: 42}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/web/views/home.templ`, Line: 43, Col: 46}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 						if templ_7745c5c3_Err != nil {
@@ -245,13 +156,13 @@ func HomePage(m GameListViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul></div>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return templ_7745c5c3_Err
 		})
-		templ_7745c5c3_Err = Base().Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.Base().Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

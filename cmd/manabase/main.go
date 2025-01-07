@@ -9,6 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
+	"github.com/jsaterdalen/manabase"
+	"github.com/jsaterdalen/manabase/cmd/web/views"
 	"github.com/jsaterdalen/manabase/internal/database"
 	_ "github.com/lib/pq"
 )
@@ -31,15 +33,36 @@ func main() {
 	}
 
 	queries := database.New(conn)
-	// indexHandler := views.Handler{Queries: queries}
 
 	router := chi.NewRouter()
 
-	fs := http.FileServer(http.Dir("web/static"))
+	fs := http.FileServer(http.Dir("cmd/web/static"))
 	router.Handle("/static/*", http.StripPrefix("/static/", fs))
 
-	// router.Get("/", )
-	router.Get("/", testHandler())
+	router.Get("/", indexHandler(queries))
+	router.Get("/newgame", newGamePageHandler())
+	router.Post("/game", func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			log.Printf("error parsing form")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		w.Header().Set("HX-Redirect", "/")
+		w.WriteHeader(http.StatusOK)
+
+		formData := r.Form
+		for key, values := range formData {
+			fmt.Print(key)
+			fmt.Print("\n")
+			for _, value := range values {
+				fmt.Print(value)
+				fmt.Print("\n")
+			}
+			fmt.Print("\n")
+		}
+	})
 
 	srv := &http.Server{
 		Handler: router,
@@ -53,16 +76,21 @@ func main() {
 	}
 }
 
-func testHandler(db *sql.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var name string
-		// Execute the query.
-		row := db.QueryRow("SELECT myname FROM mytable")
-		if err := row.Scan(&name); err != nil {
-			http.Error(w, err.Error(), 500)
-			return
+func indexHandler(queries *database.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rows, err := queries.GetPlayerDeckGame(r.Context())
+		if err != nil {
+			fmt.Println("Error getting games", err)
 		}
-		// Write it back to the client.
-		fmt.Fprintf(w, "hi %s!\n", name)
-	})
+
+		games := manabase.MakeGames(rows)
+
+		views.HomePage(games).Render(r.Context(), w)
+	}
+}
+
+func newGamePageHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		views.NewGamePage().Render(r.Context(), w)
+	}
 }

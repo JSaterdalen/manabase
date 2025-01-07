@@ -21,7 +21,7 @@ RETURNING id, created_at, updated_at, name, commander, owner_id
 type CreateDeckParams struct {
 	UpdatedAt sql.NullTime
 	Name      string
-	Commander string
+	Commander sql.NullString
 	OwnerID   uuid.UUID
 }
 
@@ -62,12 +62,64 @@ func (q *Queries) GetDeck(ctx context.Context, id uuid.UUID) (Deck, error) {
 	return i, err
 }
 
+const getDeckByName = `-- name: GetDeckByName :one
+SELECT id, created_at, updated_at, name, commander, owner_id FROM deck WHERE name = $1
+`
+
+func (q *Queries) GetDeckByName(ctx context.Context, name string) (Deck, error) {
+	row := q.db.QueryRowContext(ctx, getDeckByName, name)
+	var i Deck
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Commander,
+		&i.OwnerID,
+	)
+	return i, err
+}
+
 const getDecks = `-- name: GetDecks :many
 SELECT id, created_at, updated_at, name, commander, owner_id FROM deck
 `
 
 func (q *Queries) GetDecks(ctx context.Context) ([]Deck, error) {
 	rows, err := q.db.QueryContext(ctx, getDecks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Deck
+	for rows.Next() {
+		var i Deck
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+			&i.Commander,
+			&i.OwnerID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDecksByPlayerId = `-- name: GetDecksByPlayerId :many
+SELECT id, created_at, updated_at, name, commander, owner_id FROM deck WHERE owner_id = $1
+`
+
+func (q *Queries) GetDecksByPlayerId(ctx context.Context, ownerID uuid.UUID) ([]Deck, error) {
+	rows, err := q.db.QueryContext(ctx, getDecksByPlayerId, ownerID)
 	if err != nil {
 		return nil, err
 	}

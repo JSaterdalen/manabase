@@ -16,7 +16,7 @@ type Deck struct {
 	CreatedAt time.Time
 	UpdatedAt sql.NullTime
 	Name      string
-	Commander string
+	Commander sql.NullString
 	OwnerID   uuid.UUID
 }
 

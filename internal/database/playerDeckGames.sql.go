@@ -12,9 +12,11 @@ import (
 	"github.com/google/uuid"
 )
 
-const getPlayerGameList = `-- name: GetPlayerGameList :many
+const getPlayerDeckGame = `-- name: GetPlayerDeckGame :many
 SELECT
+    player.id AS player_id,
     player."name" AS player_name,
+    deck.id AS deck_id,
     deck."name" AS deck_name,
     pdg.is_won,
     game.id AS game_id,
@@ -30,8 +32,10 @@ ORDER BY
     date_played DESC
 `
 
-type GetPlayerGameListRow struct {
+type GetPlayerDeckGameRow struct {
+	PlayerID   uuid.UUID
 	PlayerName string
+	DeckID     uuid.UUID
 	DeckName   string
 	IsWon      bool
 	GameID     uuid.UUID
@@ -40,17 +44,19 @@ type GetPlayerGameListRow struct {
 	IsTotem    bool
 }
 
-func (q *Queries) GetPlayerGameList(ctx context.Context) ([]GetPlayerGameListRow, error) {
-	rows, err := q.db.QueryContext(ctx, getPlayerGameList)
+func (q *Queries) GetPlayerDeckGame(ctx context.Context) ([]GetPlayerDeckGameRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPlayerDeckGame)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetPlayerGameListRow
+	var items []GetPlayerDeckGameRow
 	for rows.Next() {
-		var i GetPlayerGameListRow
+		var i GetPlayerDeckGameRow
 		if err := rows.Scan(
+			&i.PlayerID,
 			&i.PlayerName,
+			&i.DeckID,
 			&i.DeckName,
 			&i.IsWon,
 			&i.GameID,

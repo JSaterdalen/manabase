@@ -1,17 +1,18 @@
 /** @type {import('tailwindcss').Config} */
+const defaultTheme = require("tailwindcss/defaultTheme");
+
 module.exports = {
-  content: ["./web/**/*.html", "./web/**/*.templ"],
+  content: ["./cmd/web/**/*.html", "./cmd/web/**/*.templ"],
   theme: {
-    fontSize: {
-      sm: "0.8rem",
-      base: "1rem",
-      xl: "1.25rem",
-      "2xl": "1.563rem",
-      "3xl": "1.953rem",
-      "4xl": "2.441rem",
-      "5xl": "3.052rem",
-      "6xl": "3.815rem",
+    extend: {
+      fontFamily: {
+        sans: ["Inter var", ...defaultTheme.fontFamily.sans],
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    require("@tailwindcss/typography"),
+    require("@tailwindcss/forms"),
+    require("@tailwindcss/aspect-ratio"),
+  ],
 };
