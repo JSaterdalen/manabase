@@ -1,7 +1,6 @@
 package manabase
 
 import (
-	"context"
 	"sort"
 	"time"
 
@@ -15,7 +14,7 @@ type Deck struct {
 	UpdatedAt time.Time
 	Name      string
 	Commander string
-	OwnerID   uuid.UUID
+	Owner     Player
 }
 
 type Game struct {
@@ -25,11 +24,11 @@ type Game struct {
 	DatePlayed time.Time
 	GameNumber int32
 	IsTotem    bool
-	Players    []Player
-	Winner     Player
+	Players    []GamePlayer
+	Winner     GamePlayer
 }
 
-type Player struct {
+type GamePlayer struct {
 	ID        uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -37,34 +36,41 @@ type Player struct {
 	Deck      Deck
 }
 
-func (p Player) IsWinner(g Game) bool {
+type Player struct {
+	ID        uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name      string
+}
+
+func (p GamePlayer) IsWinner(g Game) bool {
 	return p.ID == g.Winner.ID
 }
 
-type PlayerService interface {
-	GetPlayerList() ([]Player, error)
-}
+// type PlayerService interface {
+// 	GetPlayerList() ([]GamePlayer, error)
+// }
 
-type playerService struct {
-	queries *database.Queries
-	context context.Context
-}
+// type playerService struct {
+// 	queries *database.Queries
+// 	context context.Context
+// }
 
-func NewPlayerService(context context.Context, queries *database.Queries) PlayerService {
-	return &playerService{
-		queries: queries,
-		context: context,
-	}
-}
+// func NewPlayerService(context context.Context, queries *database.Queries) PlayerService {
+// 	return &playerService{
+// 		queries: queries,
+// 		context: context,
+// 	}
+// }
 
-func (s *playerService) GetPlayerList() ([]Player, error) {
-	rows, err := s.queries.GetPlayers(s.context)
-	if err != nil {
-		return nil, err
-	}
+// func (s *playerService) GetPlayerList() ([]GamePlayer, error) {
+// 	rows, err := s.queries.GetPlayers(s.context)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return MakePlayers(rows), nil
-}
+// 	return MakePlayers(rows), nil
+// }
 
 func MakeGames(gameRow []database.GetPlayerDeckGameRow) (games []Game) {
 	gameMap := make(map[string]Game)
@@ -73,14 +79,13 @@ func MakeGames(gameRow []database.GetPlayerDeckGameRow) (games []Game) {
 		if _, ok := gameMap[gameId]; !ok {
 			gameMap[gameId] = Game{
 				ID:         game.GameID,
-				GameNumber: game.GameNumber,
 				DatePlayed: game.DatePlayed,
-				Players:    []Player{},
-				Winner:     Player{},
+				Players:    []GamePlayer{},
+				Winner:     GamePlayer{},
 			}
 		}
 
-		player := Player{
+		player := GamePlayer{
 			ID:   game.PlayerID,
 			Name: game.PlayerName,
 			Deck: Deck{
@@ -104,7 +109,10 @@ func MakeGames(gameRow []database.GetPlayerDeckGameRow) (games []Game) {
 		games = append(games, value)
 	}
 	sort.Slice(games, func(i, j int) bool {
-		return games[i].GameNumber > games[j].GameNumber
+		if games[i].DatePlayed.Equal(games[j].DatePlayed) {
+			return games[i].ID.String() < games[j].ID.String()
+		}
+		return games[i].DatePlayed.After(games[j].DatePlayed)
 	})
 	return games
 }

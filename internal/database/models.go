@@ -25,7 +25,6 @@ type Game struct {
 	CreatedAt  time.Time
 	UpdatedAt  sql.NullTime
 	DatePlayed time.Time
-	GameNumber int32
 	IsTotem    bool
 }
 

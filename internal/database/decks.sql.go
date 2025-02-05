@@ -10,6 +10,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 const createDeck = `-- name: CreateDeck :one
@@ -114,12 +115,154 @@ func (q *Queries) GetDecks(ctx context.Context) ([]Deck, error) {
 	return items, nil
 }
 
+const getDecksByLastPlayed = `-- name: GetDecksByLastPlayed :many
+SELECT
+	d.id, 
+	d.name,
+    d.owner_id,
+	MAX(g.date_played) AS last_played_date 
+FROM deck d
+LEFT JOIN player_deck_game pdg
+  ON d.id = pdg.deck_id
+LEFT JOIN game g
+  ON pdg.game_id = g.id
+WHERE d.owner_id = ANY($1::uuid[])
+GROUP BY d.id
+ORDER BY last_played_date DESC NULLS LAST
+`
+
+type GetDecksByLastPlayedRow struct {
+	ID             uuid.UUID
+	Name           string
+	OwnerID        uuid.UUID
+	LastPlayedDate interface{}
+}
+
+func (q *Queries) GetDecksByLastPlayed(ctx context.Context, dollar_1 []uuid.UUID) ([]GetDecksByLastPlayedRow, error) {
+	rows, err := q.db.QueryContext(ctx, getDecksByLastPlayed, pq.Array(dollar_1))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDecksByLastPlayedRow
+	for rows.Next() {
+		var i GetDecksByLastPlayedRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.OwnerID,
+			&i.LastPlayedDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDecksByLastPlayedByPlayer = `-- name: GetDecksByLastPlayedByPlayer :many
+SELECT
+	d.id, 
+	d.name,
+    d.owner_id,
+	MAX(g.date_played) AS last_played_date 
+FROM deck d
+LEFT JOIN player_deck_game pdg
+  ON d.id = pdg.deck_id
+  AND pdg.player_id = $1::uuid
+LEFT JOIN game g
+  ON pdg.game_id = g.id
+WHERE d.owner_id = ANY($2::uuid[])
+GROUP BY d.id
+ORDER BY last_played_date DESC NULLS LAST
+`
+
+type GetDecksByLastPlayedByPlayerParams struct {
+	Player    uuid.UUID
+	Playerids []uuid.UUID
+}
+
+type GetDecksByLastPlayedByPlayerRow struct {
+	ID             uuid.UUID
+	Name           string
+	OwnerID        uuid.UUID
+	LastPlayedDate interface{}
+}
+
+func (q *Queries) GetDecksByLastPlayedByPlayer(ctx context.Context, arg GetDecksByLastPlayedByPlayerParams) ([]GetDecksByLastPlayedByPlayerRow, error) {
+	rows, err := q.db.QueryContext(ctx, getDecksByLastPlayedByPlayer, arg.Player, pq.Array(arg.Playerids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDecksByLastPlayedByPlayerRow
+	for rows.Next() {
+		var i GetDecksByLastPlayedByPlayerRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.OwnerID,
+			&i.LastPlayedDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getDecksByPlayerId = `-- name: GetDecksByPlayerId :many
 SELECT id, created_at, updated_at, name, commander, owner_id FROM deck WHERE owner_id = $1
 `
 
 func (q *Queries) GetDecksByPlayerId(ctx context.Context, ownerID uuid.UUID) ([]Deck, error) {
 	rows, err := q.db.QueryContext(ctx, getDecksByPlayerId, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Deck
+	for rows.Next() {
+		var i Deck
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+			&i.Commander,
+			&i.OwnerID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPlayerDecks = `-- name: GetPlayerDecks :many
+SELECT id, created_at, updated_at, name, commander, owner_id FROM deck WHERE owner_id = ANY($1::uuid[])
+`
+
+func (q *Queries) GetPlayerDecks(ctx context.Context, dollar_1 []uuid.UUID) ([]Deck, error) {
+	rows, err := q.db.QueryContext(ctx, getPlayerDecks, pq.Array(dollar_1))
 	if err != nil {
 		return nil, err
 	}

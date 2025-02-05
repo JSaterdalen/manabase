@@ -7,7 +7,6 @@ SELECT
     pdg.is_won,
     game.id AS game_id,
     game.date_played,
-    game.game_number,
     game.is_totem
 FROM
     player_deck_game pdg
@@ -15,4 +14,8 @@ FROM
     JOIN game ON pdg.game_id = game.id
     JOIN deck ON pdg.deck_id = deck.id
 ORDER BY
-    date_played DESC;
+    date_played DESC, game_id;
+
+-- name: InsertPlayerDeckGames :exec
+INSERT INTO player_deck_game (id, player_id, game_id, deck_id, is_won, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7);

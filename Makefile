@@ -2,6 +2,7 @@ build:
 	@echo "Building..."
 	@make templ
 	@make tailwind
+	@sqlc generate
 	@go build -o bin/manabase ./cmd/manabase
 
 run:

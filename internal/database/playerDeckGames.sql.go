@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,7 +22,6 @@ SELECT
     pdg.is_won,
     game.id AS game_id,
     game.date_played,
-    game.game_number,
     game.is_totem
 FROM
     player_deck_game pdg
@@ -29,7 +29,7 @@ FROM
     JOIN game ON pdg.game_id = game.id
     JOIN deck ON pdg.deck_id = deck.id
 ORDER BY
-    date_played DESC
+    date_played DESC, game_id
 `
 
 type GetPlayerDeckGameRow struct {
@@ -40,7 +40,6 @@ type GetPlayerDeckGameRow struct {
 	IsWon      bool
 	GameID     uuid.UUID
 	DatePlayed time.Time
-	GameNumber int32
 	IsTotem    bool
 }
 
@@ -61,7 +60,6 @@ func (q *Queries) GetPlayerDeckGame(ctx context.Context) ([]GetPlayerDeckGameRow
 			&i.IsWon,
 			&i.GameID,
 			&i.DatePlayed,
-			&i.GameNumber,
 			&i.IsTotem,
 		); err != nil {
 			return nil, err
@@ -75,4 +73,32 @@ func (q *Queries) GetPlayerDeckGame(ctx context.Context) ([]GetPlayerDeckGameRow
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertPlayerDeckGames = `-- name: InsertPlayerDeckGames :exec
+INSERT INTO player_deck_game (id, player_id, game_id, deck_id, is_won, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+`
+
+type InsertPlayerDeckGamesParams struct {
+	ID        uuid.UUID
+	PlayerID  uuid.UUID
+	GameID    uuid.UUID
+	DeckID    uuid.UUID
+	IsWon     bool
+	CreatedAt time.Time
+	UpdatedAt sql.NullTime
+}
+
+func (q *Queries) InsertPlayerDeckGames(ctx context.Context, arg InsertPlayerDeckGamesParams) error {
+	_, err := q.db.ExecContext(ctx, insertPlayerDeckGames,
+		arg.ID,
+		arg.PlayerID,
+		arg.GameID,
+		arg.DeckID,
+		arg.IsWon,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	return err
 }
